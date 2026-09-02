@@ -1,0 +1,187 @@
+# .pipeline/azure-pipelines.yml — YourBus_Front
+#
+# Flujo DevOps: 3 etapas secuenciales (Compile/Build -> Package -> Deploy).
+# La etapa Deploy promueve el mismo artefacto por DEV -> QA -> PROD.
+# QA corre pruebas adicionales antes de habilitar el paso a PROD.
+#
+# Requisitos previos en Azure DevOps (se configuran una vez, en el portal):
+#   - 3 "Environments" creados: yourbus-front-dev, yourbus-front-qa, yourbus-front-prod
+#   - En yourbus-front-qa y yourbus-front-prod: agregar un "Approval check"
+#     (aprobación manual) para que nadie despliegue a PROD sin revisión humana.
+#   - Service connection de Azure llamada "AzureServiceConnection"
+#     (Project Settings > Service connections > Azure Resource Manager).
+#   - App Services (o Static Web Apps) creados por entorno:
+#     yourbus-front-dev / yourbus-front-qa / yourbus-front-prod
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - '*.md'
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  nodeVersion: '20.x'
+  buildConfiguration: 'production'
+
+stages:
+
+  # ---------------------------------------------------------------------
+  # 1) COMPILE / BUILD — instala dependencias, corre Quality Gates y compila
+  # ---------------------------------------------------------------------
+  - stage: Build
+    displayName: '1. Compile / Build'
+    jobs:
+      - job: BuildAndValidate
+        displayName: 'Instalar, analizar y compilar'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Usar Node.js $(nodeVersion)'
+
+          - script: npm ci
+            displayName: 'npm ci'
+
+          # --- Quality Gate: análisis estático de código ---
+          - script: npm run lint
+            displayName: 'Quality Gate: lint (oxlint)'
+
+          # --- Quality Gate: pruebas automáticas unitarias/de componentes ---
+          - script: npm test -- --reporter=junit --outputFile=test-results.xml
+            displayName: 'Quality Gate: pruebas unitarias (vitest)'
+
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'test-results.xml'
+              testRunTitle: 'YourBus_Front - Unit Tests'
+
+          - script: npm run build
+            displayName: 'Compilar (vite build)'
+
+          - publish: '$(System.DefaultWorkingDirectory)/dist'
+            artifact: 'frontend-dist'
+            displayName: 'Publicar artefacto compilado'
+
+  # ---------------------------------------------------------------------
+  # 2) PACKAGE — empaqueta el sitio estático listo para desplegar
+  # ---------------------------------------------------------------------
+  - stage: Package
+    displayName: '2. Package'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: PackageArtifact
+        displayName: 'Empaquetar build estático'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - download: current
+            artifact: 'frontend-dist'
+
+          - task: ArchiveFiles@2
+            displayName: 'Comprimir dist/ en zip versionado'
+            inputs:
+              rootFolderOrFile: '$(Pipeline.Workspace)/frontend-dist'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/yourbus-front-$(Build.BuildId).zip'
+              replaceExistingArchive: true
+
+          - publish: '$(Build.ArtifactStagingDirectory)/yourbus-front-$(Build.BuildId).zip'
+            artifact: 'frontend-package'
+            displayName: 'Publicar paquete final'
+
+  # ---------------------------------------------------------------------
+  # 3) DEPLOY — promoción secuencial DEV -> QA -> PROD
+  # ---------------------------------------------------------------------
+  - stage: Deploy_DEV
+    displayName: '3. Deploy - DEV'
+    dependsOn: Package
+    condition: succeeded()
+    jobs:
+      - deployment: DeployDev
+        displayName: 'Desplegar a DEV'
+        environment: 'yourbus-front-dev'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  displayName: 'Desplegar en Azure App Service (DEV)'
+                  inputs:
+                    azureSubscription: 'AzureServiceConnection'
+                    appType: 'webAppLinux'
+                    appName: 'yourbus-front-dev'
+                    package: '$(Pipeline.Workspace)/frontend-package/*.zip'
+
+  - stage: Deploy_QA
+    displayName: '3. Deploy - QA'
+    dependsOn: Deploy_DEV
+    condition: succeeded()
+    jobs:
+      - deployment: DeployQA
+        displayName: 'Desplegar a QA y validar'
+        environment: 'yourbus-front-qa'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  displayName: 'Desplegar en Azure App Service (QA)'
+                  inputs:
+                    azureSubscription: 'AzureServiceConnection'
+                    appType: 'webAppLinux'
+                    appName: 'yourbus-front-qa'
+                    package: '$(Pipeline.Workspace)/frontend-package/*.zip'
+
+                # --- Quality Gate de QA: pruebas contra el sitio ya desplegado ---
+                - task: NodeTool@0
+                  inputs:
+                    versionSpec: $(nodeVersion)
+
+                - script: |
+                    echo "Ejecutando smoke tests contra https://yourbus-front-qa.azurewebsites.net"
+                    curl -sSf https://yourbus-front-qa.azurewebsites.net || exit 1
+                  displayName: 'Quality Gate QA: smoke test (sitio responde)'
+
+                # Punto de extensión: aquí se agregarían pruebas E2E
+                # (Cypress/Playwright) contra el entorno QA antes de aprobar PROD.
+
+  - stage: Deploy_PROD
+    displayName: '3. Deploy - PROD'
+    dependsOn: Deploy_QA
+    condition: succeeded()
+    jobs:
+      # Este job solo arranca si el "Approval check" configurado en el
+      # environment 'yourbus-front-prod' es aprobado manualmente en Azure DevOps.
+      - deployment: DeployProd
+        displayName: 'Desplegar a PROD'
+        environment: 'yourbus-front-prod'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  displayName: 'Desplegar en Azure App Service (PROD)'
+                  inputs:
+                    azureSubscription: 'AzureServiceConnection'
+                    appType: 'webAppLinux'
+                    appName: 'yourbus-front-prod'
+                    package: '$(Pipeline.Workspace)/frontend-package/*.zip'

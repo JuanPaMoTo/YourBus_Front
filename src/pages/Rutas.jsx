@@ -15,17 +15,25 @@ export default function Rutas() {
   }, []);
 
   return (
-    <section className="page">
-      <h1>Rutas disponibles</h1>
-      {loading && <p>Cargando rutas...</p>}
-      {error && <p className="error">{error}</p>}
+    <section>
+      <div className="page-head">
+        <h1>Rutas disponibles</h1>
+        <p>Todas las líneas activas del servicio, con su código de identificación.</p>
+      </div>
+
+      {loading && <p className="state-msg">Cargando rutas...</p>}
+      {error && <p className="state-msg error">{error}</p>}
       {!loading && !error && rutas.length === 0 && (
-        <p>No hay rutas disponibles por el momento.</p>
+        <div className="empty-state">
+          Aún no hay rutas cargadas. Conecta el backend para verlas aquí.
+        </div>
       )}
-      <ul className="list">
+
+      <ul className="route-list">
         {rutas.map((ruta) => (
-          <li key={ruta.id}>
-            <strong>{ruta.codigo}</strong> — {ruta.nombre}
+          <li key={ruta.id} className="route-item">
+            <span className="route-code">{ruta.codigo}</span>
+            <span className="route-name">{ruta.nombre}</span>
           </li>
         ))}
       </ul>

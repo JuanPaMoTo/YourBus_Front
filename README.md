@@ -1,20 +1,50 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# YourBus_Front
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+Frontend del sistema de transporte público **YourBus**, construido con **React + Vite**. Consume la API de [`YourBus_Back`](../YourBus_Back) para mostrar rutas, paraderos, horarios, ubicación en vivo, ETA y alertas.
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+## Estructura
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+```
+src/
+├── components/       # Navbar, Footer
+├── pages/            # Home, Rutas, Paraderos, Horarios, Mapa, Notificaciones, AdminBuses
+├── services/api.js   # Cliente único hacia el backend (usa VITE_API_URL)
+└── __tests__/        # Pruebas de componentes (Vitest + Testing Library)
+```
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+## Requisitos
+
+- Node.js 20.x o superior
+- El backend `YourBus_Back` corriendo (local o desplegado)
+
+## Instalación local
+
+```bash
+npm install
+cp .env.example .env   # ajusta VITE_API_URL si tu backend no está en localhost:4000
+npm run dev
+```
+
+Abre `http://localhost:5173`.
+
+## Variables de entorno
+
+| Variable       | Descripción                          | Ejemplo                             |
+|----------------|----------------------------------------|--------------------------------------|
+| `VITE_API_URL` | URL base de la API de `YourBus_Back`   | `http://localhost:4000/api`          |
+
+## Scripts
+
+```bash
+npm run dev       # servidor de desarrollo
+npm run build     # build de producción (dist/)
+npm run preview   # sirve el build de producción localmente
+npm run lint       # análisis estático (oxlint)
+npm test          # pruebas de componentes (vitest)
+```
+
+Estos mismos comandos (`lint` y `test`) son el **Quality Gate** que ejecuta el pipeline de Azure antes de permitir el despliegue — ver `.pipeline/azure-pipelines.yml`.
+
+## Despliegue
+
+El pipeline en `.pipeline/azure-pipelines.yml` compila, empaqueta y despliega el sitio de forma automática, promoviendo el mismo artefacto por los entornos **DEV → QA → PROD** en Azure App Service. QA y PROD requieren aprobación manual configurada en Azure DevOps ("Environments" con *Approval checks*).

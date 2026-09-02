@@ -24,39 +24,65 @@ export default function Mapa() {
     try {
       setEta(await api.getEta(paraderoId));
     } catch {
-      setError('El ETA no está disponible.');
+      setError('El tiempo estimado de llegada no está disponible.');
     }
   };
 
   return (
-    <section className="page">
-      <h1>Ubicación del bus y ETA</h1>
+    <section>
+      <div className="page-head">
+        <h1>Mapa y ETA</h1>
+        <p>Rastrea un bus en vivo o calcula cuánto falta para que llegue a un paradero.</p>
+      </div>
 
-      <form onSubmit={consultarUbicacion} className="form-inline">
-        <input
-          placeholder="ID del bus"
-          value={busId}
-          onChange={(e) => setBusId(e.target.value)}
-        />
-        <button type="submit">Ver ubicación</button>
-      </form>
-      {ubicacion && (
-        <p>
-          Lat: {ubicacion.lat} — Lng: {ubicacion.lng}
-        </p>
-      )}
+      <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+        <div>
+          <h3 style={{ marginBottom: '0.75rem' }}>Ubicación en vivo</h3>
+          <form onSubmit={consultarUbicacion} className="form-stack">
+            <div>
+              <label htmlFor="busId">ID del bus</label>
+              <input
+                id="busId"
+                placeholder="Ej. BUS-102"
+                value={busId}
+                onChange={(e) => setBusId(e.target.value)}
+              />
+            </div>
+            <button type="submit">Ver ubicación</button>
+          </form>
+          {ubicacion && (
+            <div className="result-panel">
+              <span className="badge badge-live">En ruta</span>
+              <p style={{ marginTop: '0.6rem' }}>
+                Lat {ubicacion.lat} · Lng {ubicacion.lng}
+              </p>
+            </div>
+          )}
+        </div>
 
-      <form onSubmit={consultarEta} className="form-inline">
-        <input
-          placeholder="ID del paradero"
-          value={paraderoId}
-          onChange={(e) => setParaderoId(e.target.value)}
-        />
-        <button type="submit">Ver ETA</button>
-      </form>
-      {eta && <p>Tiempo estimado de llegada: {eta.minutos} min</p>}
+        <div>
+          <h3 style={{ marginBottom: '0.75rem' }}>Tiempo estimado de llegada</h3>
+          <form onSubmit={consultarEta} className="form-stack">
+            <div>
+              <label htmlFor="paraderoId">ID del paradero</label>
+              <input
+                id="paraderoId"
+                placeholder="Ej. P-045"
+                value={paraderoId}
+                onChange={(e) => setParaderoId(e.target.value)}
+              />
+            </div>
+            <button type="submit">Ver ETA</button>
+          </form>
+          {eta && (
+            <div className="result-panel">
+              <span className="value">{eta.minutos} min</span>
+            </div>
+          )}
+        </div>
+      </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="state-msg error" style={{ marginTop: '1.5rem' }}>{error}</p>}
     </section>
   );
 }
