@@ -12,8 +12,22 @@
   --green: #2f9e63;
   --red: #d64545;
 
+  /* Paleta de "líneas" — cada sección/ruta toma un color, como en un mapa de metro */
+  --l1: #e4032e;
+  --l2: #ffb627;
+  --l3: #2f9e63;
+  --l4: #1f6fba;
+  --l5: #7c4dff;
+  --l6: #ff7a3d;
+
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --shadow-card: 0 1px 2px rgba(18, 32, 61, 0.05), 0 10px 24px -16px rgba(18, 32, 61, 0.25);
+  --shadow-pop: 0 20px 40px -20px rgba(18, 32, 61, 0.35);
 
   color-scheme: light;
   color: var(--ink);
