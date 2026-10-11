@@ -6,12 +6,15 @@
 #
 # Requisitos previos en Azure DevOps (se configuran una vez, en el portal):
 #   - 3 "Environments" creados: yourbus-front-dev, yourbus-front-qa, yourbus-front-prod
-#   - En yourbus-front-qa y yourbus-front-prod: agregar un "Approval check"
+#   - En yourbus-front-prod (y opcionalmente QA): agregar un "Approval check"
 #     (aprobación manual) para que nadie despliegue a PROD sin revisión humana.
-#   - Service connection de Azure llamada "AzureServiceConnection"
-#     (Project Settings > Service connections > Azure Resource Manager).
-#   - App Services (o Static Web Apps) creados por entorno:
+#   - Service connection de Azure llamada "AzureServiceConnection".
+#   - 3 App Services (Publicar: Código, Node 22 LTS, Linux):
 #     yourbus-front-dev / yourbus-front-qa / yourbus-front-prod
+#
+# El front es un sitio estático (carpeta dist de Vite). En App Service Linux se
+# sirve con pm2 (--spa hace que las rutas de React Router no den 404 al recargar).
+# La URL del backend la elige src/services/api.js según el dominio del front.
 
 trigger:
   branches:
@@ -27,8 +30,7 @@ pr:
       - main
 
 variables:
-  nodeVersion: '20.x'
-  buildConfiguration: 'production'
+  nodeVersion: '22.x'
 
 stages:
 
@@ -55,8 +57,10 @@ stages:
           - script: npm run lint
             displayName: 'Quality Gate: lint (oxlint)'
 
-          # --- Quality Gate: pruebas automáticas unitarias/de componentes ---
-          - script: npm test -- --reporter=junit --outputFile=test-results.xml
+          # --- Quality Gate: pruebas unitarias/de componentes ---
+          # Dos reporteros: "default" imprime en consola qué prueba falla y
+          # "junit" escribe el archivo que se publica en Azure DevOps.
+          - script: npm test -- --reporter=default --reporter=junit --outputFile.junit=test-results.xml
             displayName: 'Quality Gate: pruebas unitarias (vitest)'
 
           - task: PublishTestResults@2
@@ -126,6 +130,29 @@ stages:
                     appType: 'webAppLinux'
                     appName: 'yourbus-front-dev'
                     package: '$(Pipeline.Workspace)/frontend-package/*.zip'
+                    runtimeStack: 'NODE|22-lts'
+                    startUpCommand: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
+
+                - script: |
+                    URL="https://yourbus-front-dev-cvesf3apbsa9gpcg.chilecentral-01.azurewebsites.net"
+                    echo "Esperando 30 segundos iniciales a que el sitio inicie en DEV..."
+                    sleep 30
+                    SUCCESS=0
+                    for i in $(seq 1 18); do
+                      HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+                      if [ "$HTTP_STATUS" -eq 200 ]; then
+                        echo "Front DEV respondiendo HTTP 200 OK."
+                        SUCCESS=1
+                        break
+                      fi
+                      echo "Intento $i: Código HTTP recibido $HTTP_STATUS, reintentando en 10s..."
+                      sleep 10
+                    done
+                    if [ $SUCCESS -ne 1 ]; then
+                      echo "Error: el front en DEV no respondió HTTP 200 dentro del tiempo esperado."
+                      exit 1
+                    fi
+                  displayName: 'Verificación post-despliegue en DEV'
 
   - stage: Deploy_QA
     displayName: '3. Deploy - QA'
@@ -148,15 +175,29 @@ stages:
                     appType: 'webAppLinux'
                     appName: 'yourbus-front-qa'
                     package: '$(Pipeline.Workspace)/frontend-package/*.zip'
+                    runtimeStack: 'NODE|22-lts'
+                    startUpCommand: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
 
                 # --- Quality Gate de QA: pruebas contra el sitio ya desplegado ---
-                - task: NodeTool@0
-                  inputs:
-                    versionSpec: $(nodeVersion)
-
                 - script: |
-                    echo "Ejecutando smoke tests contra https://yourbus-front-qa.azurewebsites.net"
-                    curl -sSf https://yourbus-front-qa.azurewebsites.net || exit 1
+                    URL="https://yourbus-front-qa-b4cue0d0a9c0ghc0.chilecentral-01.azurewebsites.net"
+                    echo "Esperando 30 segundos iniciales a que el sitio inicie en QA..."
+                    sleep 30
+                    SUCCESS=0
+                    for i in $(seq 1 18); do
+                      HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+                      if [ "$HTTP_STATUS" -eq 200 ]; then
+                        echo "Front QA respondiendo HTTP 200 OK."
+                        SUCCESS=1
+                        break
+                      fi
+                      echo "Intento $i: Código HTTP recibido $HTTP_STATUS, reintentando en 10s..."
+                      sleep 10
+                    done
+                    if [ $SUCCESS -ne 1 ]; then
+                      echo "Error: el front en QA no respondió HTTP 200 dentro del tiempo esperado."
+                      exit 1
+                    fi
                   displayName: 'Quality Gate QA: smoke test (sitio responde)'
 
                 # Punto de extensión: aquí se agregarían pruebas E2E
@@ -185,3 +226,26 @@ stages:
                     appType: 'webAppLinux'
                     appName: 'yourbus-front-prod'
                     package: '$(Pipeline.Workspace)/frontend-package/*.zip'
+                    runtimeStack: 'NODE|22-lts'
+                    startUpCommand: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
+
+                - script: |
+                    URL="https://yourbus-front-prod-ckeqapbpexdpfkbb.chilecentral-01.azurewebsites.net"
+                    echo "Esperando 30 segundos iniciales a que el sitio inicie en PROD..."
+                    sleep 30
+                    SUCCESS=0
+                    for i in $(seq 1 18); do
+                      HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+                      if [ "$HTTP_STATUS" -eq 200 ]; then
+                        echo "Front PROD respondiendo HTTP 200 OK."
+                        SUCCESS=1
+                        break
+                      fi
+                      echo "Intento $i: Código HTTP recibido $HTTP_STATUS, reintentando en 10s..."
+                      sleep 10
+                    done
+                    if [ $SUCCESS -ne 1 ]; then
+                      echo "Error: el front en PROD no respondió HTTP 200 dentro del tiempo esperado."
+                      exit 1
+                    fi
+                  displayName: 'Verificación post-despliegue en PROD'
