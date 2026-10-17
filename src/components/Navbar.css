@@ -52,7 +52,9 @@
   scrollbar-width: none;
 }
 
-.line::-webkit-scrollbar { display: none; }
+.line::-webkit-scrollbar {
+  display: none;
+}
 
 .line-track {
   position: absolute;
@@ -62,7 +64,13 @@
   height: 2px;
   background: linear-gradient(
     90deg,
-    var(--l1), var(--l2), var(--l3), var(--l4), var(--l5), var(--l6), var(--l1)
+    var(--l1),
+    var(--l2),
+    var(--l3),
+    var(--l4),
+    var(--l5),
+    var(--l6),
+    var(--l1)
   );
   opacity: 0.35;
 }
@@ -88,7 +96,9 @@
   font-size: 0.82rem;
   font-weight: 500;
   border-radius: 999px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .stop-dot {
@@ -98,37 +108,75 @@
   background: var(--navy-soft);
   border: 2px solid rgba(247, 245, 240, 0.35);
   z-index: 1;
-  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 /* cada parada toma el color de una "línea" distinta, como en un mapa de metro */
-.line-stops li:nth-child(7n+1) .stop.active,
-.line-stops li:nth-child(7n+1) .stop:hover { color: var(--l1); }
-.line-stops li:nth-child(7n+1) .stop.active .stop-dot { background: var(--l1); border-color: var(--l1); }
+.line-stops li:nth-child(7n + 1) .stop.active,
+.line-stops li:nth-child(7n + 1) .stop:hover {
+  color: var(--l1);
+}
+.line-stops li:nth-child(7n + 1) .stop.active .stop-dot {
+  background: var(--l1);
+  border-color: var(--l1);
+}
 
-.line-stops li:nth-child(7n+2) .stop.active,
-.line-stops li:nth-child(7n+2) .stop:hover { color: var(--l2); }
-.line-stops li:nth-child(7n+2) .stop.active .stop-dot { background: var(--l2); border-color: var(--l2); }
+.line-stops li:nth-child(7n + 2) .stop.active,
+.line-stops li:nth-child(7n + 2) .stop:hover {
+  color: var(--l2);
+}
+.line-stops li:nth-child(7n + 2) .stop.active .stop-dot {
+  background: var(--l2);
+  border-color: var(--l2);
+}
 
-.line-stops li:nth-child(7n+3) .stop.active,
-.line-stops li:nth-child(7n+3) .stop:hover { color: var(--l3); }
-.line-stops li:nth-child(7n+3) .stop.active .stop-dot { background: var(--l3); border-color: var(--l3); }
+.line-stops li:nth-child(7n + 3) .stop.active,
+.line-stops li:nth-child(7n + 3) .stop:hover {
+  color: var(--l3);
+}
+.line-stops li:nth-child(7n + 3) .stop.active .stop-dot {
+  background: var(--l3);
+  border-color: var(--l3);
+}
 
-.line-stops li:nth-child(7n+4) .stop.active,
-.line-stops li:nth-child(7n+4) .stop:hover { color: var(--l4); }
-.line-stops li:nth-child(7n+4) .stop.active .stop-dot { background: var(--l4); border-color: var(--l4); }
+.line-stops li:nth-child(7n + 4) .stop.active,
+.line-stops li:nth-child(7n + 4) .stop:hover {
+  color: var(--l4);
+}
+.line-stops li:nth-child(7n + 4) .stop.active .stop-dot {
+  background: var(--l4);
+  border-color: var(--l4);
+}
 
-.line-stops li:nth-child(7n+5) .stop.active,
-.line-stops li:nth-child(7n+5) .stop:hover { color: var(--l5); }
-.line-stops li:nth-child(7n+5) .stop.active .stop-dot { background: var(--l5); border-color: var(--l5); }
+.line-stops li:nth-child(7n + 5) .stop.active,
+.line-stops li:nth-child(7n + 5) .stop:hover {
+  color: var(--l5);
+}
+.line-stops li:nth-child(7n + 5) .stop.active .stop-dot {
+  background: var(--l5);
+  border-color: var(--l5);
+}
 
-.line-stops li:nth-child(7n+6) .stop.active,
-.line-stops li:nth-child(7n+6) .stop:hover { color: var(--l6); }
-.line-stops li:nth-child(7n+6) .stop.active .stop-dot { background: var(--l6); border-color: var(--l6); }
+.line-stops li:nth-child(7n + 6) .stop.active,
+.line-stops li:nth-child(7n + 6) .stop:hover {
+  color: var(--l6);
+}
+.line-stops li:nth-child(7n + 6) .stop.active .stop-dot {
+  background: var(--l6);
+  border-color: var(--l6);
+}
 
-.line-stops li:nth-child(7n+7) .stop.active,
-.line-stops li:nth-child(7n+7) .stop:hover { color: var(--amber); }
-.line-stops li:nth-child(7n+7) .stop.active .stop-dot { background: var(--amber); border-color: var(--amber); }
+.line-stops li:nth-child(7n + 7) .stop.active,
+.line-stops li:nth-child(7n + 7) .stop:hover {
+  color: var(--amber);
+}
+.line-stops li:nth-child(7n + 7) .stop.active .stop-dot {
+  background: var(--amber);
+  border-color: var(--amber);
+}
 
 .stop.active {
   background: rgba(247, 245, 240, 0.08);

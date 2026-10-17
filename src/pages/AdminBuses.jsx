@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { api } from '../services/api';
+import { useState } from "react";
+import { api } from "../services/api";
 
 export default function AdminBuses() {
-  const [form, setForm] = useState({ placa: '', empresa: '' });
+  const [form, setForm] = useState({ placa: "", empresa: "" });
   const [mensaje, setMensaje] = useState(null);
   const [ok, setOk] = useState(false);
 
@@ -14,11 +14,11 @@ export default function AdminBuses() {
     try {
       await api.registrarBus(form);
       setOk(true);
-      setMensaje('Bus registrado correctamente.');
-      setForm({ placa: '', empresa: '' });
+      setMensaje("Bus registrado correctamente.");
+      setForm({ placa: "", empresa: "" });
     } catch {
       setOk(false);
-      setMensaje('No fue posible registrar el bus. Revisa los datos.');
+      setMensaje("No fue posible registrar el bus. Revisa los datos.");
     }
   };
 
@@ -56,7 +56,7 @@ export default function AdminBuses() {
       </form>
 
       {mensaje && (
-        <p className={`state-msg ${ok ? 'success' : 'error'}`}>{mensaje}</p>
+        <p className={`state-msg ${ok ? "success" : "error"}`}>{mensaje}</p>
       )}
     </section>
   );

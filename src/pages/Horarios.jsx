@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { api } from '../services/api';
+import { useState } from "react";
+import { api } from "../services/api";
 
 export default function Horarios() {
-  const [rutaId, setRutaId] = useState('');
+  const [rutaId, setRutaId] = useState("");
   const [horarios, setHorarios] = useState([]);
   const [error, setError] = useState(null);
   const [buscado, setBuscado] = useState(false);
@@ -14,7 +14,7 @@ export default function Horarios() {
     try {
       setHorarios(await api.getHorarios(rutaId));
     } catch {
-      setError('No hay información de horarios para esta ruta.');
+      setError("No hay información de horarios para esta ruta.");
       setHorarios([]);
     }
   };
@@ -36,13 +36,17 @@ export default function Horarios() {
             onChange={(e) => setRutaId(e.target.value)}
           />
         </div>
-        <button type="submit" style={{ alignSelf: 'flex-end' }}>Consultar</button>
+        <button type="submit" style={{ alignSelf: "flex-end" }}>
+          Consultar
+        </button>
       </form>
 
       {error && <p className="state-msg error">{error}</p>}
 
       {buscado && !error && horarios.length === 0 && (
-        <div className="empty-state">No hay horarios registrados para esa ruta.</div>
+        <div className="empty-state">
+          No hay horarios registrados para esa ruta.
+        </div>
       )}
 
       <ul className="route-list">

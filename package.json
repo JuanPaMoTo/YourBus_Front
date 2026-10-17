@@ -9,10 +9,17 @@
     "lint": "oxlint src",
     "test": "vitest run",
     "preview": "vite preview",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "test:coverage": "vitest run --coverage",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "audit": "npm audit --omit=dev --audit-level=high"
   },
   "lint-staged": {
-    "src/**/*.{js,jsx}": "oxlint"
+    "src/**/*.{js,jsx}": [
+      "oxlint",
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -25,10 +32,12 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
+    "@vitest/coverage-v8": "^4.1.11",
     "husky": "^9.1.7",
     "jsdom": "^30.0.1",
     "lint-staged": "^16.4.0",
     "oxlint": "^1.79.0",
+    "prettier": "^3.9.10",
     "vite": "^8.2.2",
     "vitest": "^4.1.11"
   }

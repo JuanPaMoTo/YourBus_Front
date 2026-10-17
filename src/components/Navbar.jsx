@@ -1,14 +1,14 @@
-import { NavLink } from 'react-router-dom';
-import './Navbar.css';
+import { NavLink } from "react-router-dom";
+import "./Navbar.css";
 
 const stops = [
-  { to: '/', label: 'Inicio', end: true },
-  { to: '/rutas', label: 'Rutas' },
-  { to: '/paraderos', label: 'Paraderos' },
-  { to: '/horarios', label: 'Horarios' },
-  { to: '/mapa', label: 'Mapa y ETA' },
-  { to: '/notificaciones', label: 'Alertas' },
-  { to: '/admin/buses', label: 'Flota' },
+  { to: "/", label: "Inicio", end: true },
+  { to: "/rutas", label: "Rutas" },
+  { to: "/paraderos", label: "Paraderos" },
+  { to: "/horarios", label: "Horarios" },
+  { to: "/mapa", label: "Mapa y ETA" },
+  { to: "/notificaciones", label: "Alertas" },
+  { to: "/admin/buses", label: "Flota" },
 ];
 
 export default function Navbar() {
@@ -29,7 +29,7 @@ export default function Navbar() {
                 to={s.to}
                 end={s.end}
                 className={({ isActive }) =>
-                  isActive ? 'stop active' : 'stop'
+                  isActive ? "stop active" : "stop"
                 }
               >
                 <span className="stop-dot" aria-hidden="true" />

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { api } from '../services/api';
+import { useEffect, useState } from "react";
+import { api } from "../services/api";
 
 export default function Rutas() {
   const [rutas, setRutas] = useState([]);
@@ -10,7 +10,7 @@ export default function Rutas() {
     api
       .getRutas()
       .then(setRutas)
-      .catch(() => setError('No fue posible cargar las rutas.'))
+      .catch(() => setError("No fue posible cargar las rutas."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -18,7 +18,10 @@ export default function Rutas() {
     <section>
       <div className="page-head">
         <h1>Rutas disponibles</h1>
-        <p>Todas las líneas activas del servicio, con su código de identificación.</p>
+        <p>
+          Todas las líneas activas del servicio, con su código de
+          identificación.
+        </p>
       </div>
 
       {loading && <p className="state-msg">Cargando rutas...</p>}

@@ -1,14 +1,14 @@
-import { Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import Home from './pages/Home';
-import Rutas from './pages/Rutas';
-import Paraderos from './pages/Paraderos';
-import Horarios from './pages/Horarios';
-import Mapa from './pages/Mapa';
-import Notificaciones from './pages/Notificaciones';
-import AdminBuses from './pages/AdminBuses';
-import './App.css';
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Rutas from "./pages/Rutas";
+import Paraderos from "./pages/Paraderos";
+import Horarios from "./pages/Horarios";
+import Mapa from "./pages/Mapa";
+import Notificaciones from "./pages/Notificaciones";
+import AdminBuses from "./pages/AdminBuses";
+import "./App.css";
 
 function App() {
   return (

@@ -7,31 +7,29 @@
 // En local (localhost) se usa VITE_API_URL del archivo .env, o el valor por
 // defecto de abajo si no existe.
 
-const BACKENDS_POR_DOMINIO = {
-  'yourbus-front-dev-cvesf3apbsa9gpcg.chilecentral-01.azurewebsites.net':
-    'https://yourbus-back-dev-bqhfb6hghpg3h7a2.chilecentral-01.azurewebsites.net/api',
-  'yourbus-front-qa-b4cue0d0a9c0ghc0.chilecentral-01.azurewebsites.net':
-    'https://yourbus-back-qa2-hqhuezhzaeceajd8.chilecentral-01.azurewebsites.net/api',
-  'yourbus-front-prod-ckeqapbpexdpfkbb.chilecentral-01.azurewebsites.net':
-    'https://yourbus-back-prod-h7a6hwhhhfd0ere0.chilecentral-01.azurewebsites.net/api',
+export const BACKENDS_POR_DOMINIO = {
+  "yourbus-front-dev-cvesf3apbsa9gpcg.chilecentral-01.azurewebsites.net":
+    "https://yourbus-back-dev-bqhfb6hghpg3h7a2.chilecentral-01.azurewebsites.net/api",
+  "yourbus-front-qa-b4cue0d0a9c0ghc0.chilecentral-01.azurewebsites.net":
+    "https://yourbus-back-qa2-hqhuezhzaeceajd8.chilecentral-01.azurewebsites.net/api",
+  "yourbus-front-prod-ckeqapbpexdpfkbb.chilecentral-01.azurewebsites.net":
+    "https://yourbus-back-prod-h7a6hwhhhfd0ere0.chilecentral-01.azurewebsites.net/api",
 };
 
-function resolverApiUrl() {
-  debugger;
-  const dominio =
-    typeof window !== 'undefined' ? window.location.hostname : '';
-  return (
-    BACKENDS_POR_DOMINIO[dominio] ||
-    import.meta.env.VITE_API_URL ||
-    'http://localhost:4000/api'
-  );
+// Recibe el dominio y la URL de .env como parámetros para poder probarla
+// sin depender del navegador. Sin argumentos usa los valores reales.
+export function resolverApiUrl(
+  dominio = typeof window !== "undefined" ? window.location.hostname : "",
+  urlEnv = import.meta.env.VITE_API_URL,
+) {
+  return BACKENDS_POR_DOMINIO[dominio] || urlEnv || "http://localhost:4000/api";
 }
 
 const API_URL = resolverApiUrl();
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
     ...options,
   });
   if (!res.ok) {
@@ -41,12 +39,12 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  getRutas: () => request('/rutas'),
+  getRutas: () => request("/rutas"),
   getParaderos: (rutaId) => request(`/rutas/${rutaId}/paraderos`),
   getHorarios: (rutaId) => request(`/rutas/${rutaId}/horarios`),
   getUbicacionBus: (busId) => request(`/buses/${busId}/ubicacion`),
   getEta: (paraderoId) => request(`/paraderos/${paraderoId}/eta`),
   getEstadoRuta: (rutaId) => request(`/rutas/${rutaId}/estado`),
   registrarBus: (data) =>
-    request('/buses', { method: 'POST', body: JSON.stringify(data) }),
+    request("/buses", { method: "POST", body: JSON.stringify(data) }),
 };

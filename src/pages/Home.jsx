@@ -1,25 +1,25 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 const quickLinks = [
   {
-    to: '/rutas',
-    title: 'Rutas',
-    desc: 'Consulta el trazado y las líneas activas del servicio.',
+    to: "/rutas",
+    title: "Rutas",
+    desc: "Consulta el trazado y las líneas activas del servicio.",
   },
   {
-    to: '/horarios',
-    title: 'Horarios',
-    desc: 'Frecuencias por jornada para cada ruta.',
+    to: "/horarios",
+    title: "Horarios",
+    desc: "Frecuencias por jornada para cada ruta.",
   },
   {
-    to: '/mapa',
-    title: 'Mapa y ETA',
-    desc: 'Ubicación del bus en vivo y tiempo estimado de llegada.',
+    to: "/mapa",
+    title: "Mapa y ETA",
+    desc: "Ubicación del bus en vivo y tiempo estimado de llegada.",
   },
   {
-    to: '/notificaciones',
-    title: 'Alertas',
-    desc: 'Retrasos, desvíos e incidentes reportados en la red.',
+    to: "/notificaciones",
+    title: "Alertas",
+    desc: "Retrasos, desvíos e incidentes reportados en la red.",
   },
 ];
 
@@ -51,16 +51,53 @@ export default function Home() {
           role="img"
           aria-label="Red de rutas con paraderos conectados"
         >
-          <path d="M20 170 L110 60 L200 100 L300 40" stroke="var(--l1)" strokeWidth="4" strokeLinecap="round" fill="none" opacity="0.9" />
-          <path d="M20 60 L100 130 L180 190 L280 150" stroke="var(--l4)" strokeWidth="4" strokeLinecap="round" fill="none" opacity="0.9" />
-          <path d="M40 20 L120 100 L220 60 L290 130" stroke="var(--l3)" strokeWidth="4" strokeLinecap="round" fill="none" opacity="0.85" />
+          <path
+            d="M20 170 L110 60 L200 100 L300 40"
+            stroke="var(--l1)"
+            strokeWidth="4"
+            strokeLinecap="round"
+            fill="none"
+            opacity="0.9"
+          />
+          <path
+            d="M20 60 L100 130 L180 190 L280 150"
+            stroke="var(--l4)"
+            strokeWidth="4"
+            strokeLinecap="round"
+            fill="none"
+            opacity="0.9"
+          />
+          <path
+            d="M40 20 L120 100 L220 60 L290 130"
+            stroke="var(--l3)"
+            strokeWidth="4"
+            strokeLinecap="round"
+            fill="none"
+            opacity="0.85"
+          />
 
           {[
-            [20, 170], [110, 60], [200, 100], [300, 40],
-            [20, 60], [100, 130], [180, 190], [280, 150],
-            [40, 20], [220, 60], [290, 130],
+            [20, 170],
+            [110, 60],
+            [200, 100],
+            [300, 40],
+            [20, 60],
+            [100, 130],
+            [180, 190],
+            [280, 150],
+            [40, 20],
+            [220, 60],
+            [290, 130],
           ].map(([cx, cy], i) => (
-            <circle key={i} cx={cx} cy={cy} r={i % 4 === 0 ? 7 : 5} fill="var(--cream)" stroke="var(--navy)" strokeWidth="2.5" />
+            <circle
+              key={i}
+              cx={cx}
+              cy={cy}
+              r={i % 4 === 0 ? 7 : 5}
+              fill="var(--cream)"
+              stroke="var(--navy)"
+              strokeWidth="2.5"
+            />
           ))}
         </svg>
       </section>

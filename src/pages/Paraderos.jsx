@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { api } from '../services/api';
+import { useState } from "react";
+import { api } from "../services/api";
 
 export default function Paraderos() {
-  const [rutaId, setRutaId] = useState('');
+  const [rutaId, setRutaId] = useState("");
   const [paraderos, setParaderos] = useState([]);
   const [error, setError] = useState(null);
   const [buscado, setBuscado] = useState(false);
@@ -14,7 +14,7 @@ export default function Paraderos() {
     try {
       setParaderos(await api.getParaderos(rutaId));
     } catch {
-      setError('No hay paraderos disponibles para esta ruta.');
+      setError("No hay paraderos disponibles para esta ruta.");
       setParaderos([]);
     }
   };
@@ -36,13 +36,17 @@ export default function Paraderos() {
             onChange={(e) => setRutaId(e.target.value)}
           />
         </div>
-        <button type="submit" style={{ alignSelf: 'flex-end' }}>Consultar</button>
+        <button type="submit" style={{ alignSelf: "flex-end" }}>
+          Consultar
+        </button>
       </form>
 
       {error && <p className="state-msg error">{error}</p>}
 
       {buscado && !error && paraderos.length === 0 && (
-        <div className="empty-state">No se encontraron paraderos para esa ruta.</div>
+        <div className="empty-state">
+          No se encontraron paraderos para esa ruta.
+        </div>
       )}
 
       <ol className="stop-list">
