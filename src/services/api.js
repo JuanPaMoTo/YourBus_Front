@@ -17,6 +17,7 @@ const BACKENDS_POR_DOMINIO = {
 };
 
 function resolverApiUrl() {
+  debugger;
   const dominio =
     typeof window !== 'undefined' ? window.location.hostname : '';
   return (
