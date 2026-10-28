@@ -15,6 +15,10 @@
 # El front es un sitio estático (carpeta dist de Vite). En App Service Linux se
 # sirve con pm2 (--spa hace que las rutas de React Router no den 404 al recargar).
 # La URL del backend la elige src/services/api.js según el dominio del front.
+#
+# Inspección de código con SonarCloud: se activa cambiando runSonar a 'true'
+# cuando ya exista la organización, el proyecto y la service connection
+# 'SonarCloud' (pasos en el README, sección "SonarCloud").
 
 trigger:
   branches:
@@ -31,6 +35,9 @@ pr:
 
 variables:
   nodeVersion: '22.x'
+  runSonar: 'false'
+  sonarOrganization: 'TU-ORGANIZACION-SONAR'
+  sonarProjectKey: 'TU-ORGANIZACION-SONAR_YourBus_Front'
 
 stages:
 
@@ -45,13 +52,38 @@ stages:
         pool:
           vmImage: 'ubuntu-latest'
         steps:
+          # Historial completo: SonarCloud lo necesita para atribuir líneas nuevas.
+          - checkout: self
+            fetchDepth: 0
+
           - task: NodeTool@0
             inputs:
               versionSpec: $(nodeVersion)
             displayName: 'Usar Node.js $(nodeVersion)'
 
+          # (desactivado hasta instalar la extensión SonarQube Cloud; ver README, sección SonarCloud)
+          # - task: SonarCloudPrepare@4
+          #   condition: eq(variables['runSonar'], 'true')
+          #   displayName: 'SonarCloud: preparar análisis'
+          #   inputs:
+          #     SonarCloud: 'SonarCloud'
+          #     organization: '$(sonarOrganization)'
+          #     scannerMode: 'cli'
+          #     configMode: 'manual'
+          #     cliProjectKey: '$(sonarProjectKey)'
+          #     cliProjectName: 'YourBus_Front'
+          #     cliSources: 'src'
+          #     extraProperties: |
+          #       sonar.tests=src
+          #       sonar.test.inclusions=**/__tests__/**
+          #       sonar.exclusions=**/__tests__/**,**/node_modules/**,coverage/**,dist/**
+          #       sonar.javascript.lcov.reportPaths=coverage/lcov.info
+
+          # HUSKY=0: los hooks de git son para el computador del desarrollador, no para CI.
           - script: npm ci
             displayName: 'npm ci'
+            env:
+              HUSKY: '0'
 
           # --- Quality Gate: análisis estático de código ---
           - script: npm run lint
@@ -60,8 +92,8 @@ stages:
           # --- Quality Gate: pruebas unitarias/de componentes ---
           # Dos reporteros: "default" imprime en consola qué prueba falla y
           # "junit" escribe el archivo que se publica en Azure DevOps.
-          - script: npm test -- --reporter=default --reporter=junit --outputFile.junit=test-results.xml
-            displayName: 'Quality Gate: pruebas unitarias (vitest)'
+          - script: npm test -- --coverage --reporter=default --reporter=junit --outputFile.junit=test-results.xml
+            displayName: 'Quality Gate: pruebas unitarias + cobertura (vitest)'
 
           - task: PublishTestResults@2
             condition: succeededOrFailed()
@@ -69,6 +101,24 @@ stages:
               testResultsFormat: 'JUnit'
               testResultsFiles: 'test-results.xml'
               testRunTitle: 'YourBus_Front - Unit Tests'
+
+          - task: PublishCodeCoverageResults@2
+            condition: succeededOrFailed()
+            inputs:
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+
+          # --- Quality Gate: inspección de código en SonarCloud ---
+          # (desactivado hasta instalar la extensión SonarQube Cloud; ver README, sección SonarCloud)
+          # - task: SonarCloudAnalyze@4
+          #   condition: and(succeeded(), eq(variables['runSonar'], 'true'))
+          #   displayName: 'SonarCloud: analizar código'
+
+          # (desactivado hasta instalar la extensión SonarQube Cloud; ver README, sección SonarCloud)
+          # - task: SonarCloudPublish@4
+          #   condition: and(succeeded(), eq(variables['runSonar'], 'true'))
+          #   displayName: 'SonarCloud: publicar resultado'
+          #   inputs:
+          #     pollingTimeoutSec: '300'
 
           - script: npm run build
             displayName: 'Compilar (vite build)'

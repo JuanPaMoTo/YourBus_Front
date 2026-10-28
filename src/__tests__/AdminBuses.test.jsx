@@ -4,7 +4,9 @@ import AdminBuses from "../pages/AdminBuses";
 import { api } from "../services/api";
 
 // Se reemplaza la API por un simulacro: la prueba no usa red ni backend.
-vi.mock("../services/api", () => ({ api: { registrarBus: vi.fn() } }));
+vi.mock("../services/api", () => ({
+  api: { registrarBus: vi.fn(), getBuses: vi.fn() },
+}));
 
 function llenarFormulario(placa, empresa) {
   fireEvent.change(screen.getByLabelText("Placa"), {
@@ -16,23 +18,36 @@ function llenarFormulario(placa, empresa) {
 }
 
 // Pruebas de caja blanca: cada prueba recorre una rama de AdminBuses.jsx
-// (formulario inicial, registro correcto y registro con error).
+// (formulario inicial, flota, registro correcto y registro con error).
 describe("AdminBuses", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    api.getBuses.mockResolvedValue([]);
   });
 
-  it("muestra el formulario sin ningún mensaje al inicio", () => {
+  it("muestra el formulario sin ningún mensaje al inicio", async () => {
     render(<AdminBuses />);
 
     expect(screen.getByLabelText("Placa")).toBeTruthy();
     expect(screen.getByLabelText("Empresa")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Guardar bus" })).toBeTruthy();
     expect(screen.queryByText("Bus registrado correctamente.")).toBeNull();
+    expect(await screen.findByText("Aún no hay buses registrados.")).toBeTruthy();
   });
 
-  it("actualiza los campos mientras el usuario escribe", () => {
+  it("lista los buses de la flota", async () => {
+    api.getBuses.mockResolvedValue([
+      { id: "1", placa: "ABCD-11", empresa: "Transportes Norte" },
+    ]);
     render(<AdminBuses />);
+
+    expect(await screen.findByText("ABCD-11")).toBeTruthy();
+    expect(screen.getByText("Transportes Norte")).toBeTruthy();
+  });
+
+  it("actualiza los campos mientras el usuario escribe", async () => {
+    render(<AdminBuses />);
+    await screen.findByText("Aún no hay buses registrados.");
 
     llenarFormulario("ABCD-12", "Transportes Norte");
 
@@ -43,6 +58,7 @@ describe("AdminBuses", () => {
   it("registra el bus, muestra el éxito y limpia el formulario", async () => {
     api.registrarBus.mockResolvedValue({});
     render(<AdminBuses />);
+    await screen.findByText("Aún no hay buses registrados.");
 
     llenarFormulario("ABCD-12", "Transportes Norte");
     fireEvent.click(screen.getByRole("button", { name: "Guardar bus" }));
@@ -58,8 +74,9 @@ describe("AdminBuses", () => {
   });
 
   it("muestra un error y conserva los datos cuando el registro falla", async () => {
-    api.registrarBus.mockRejectedValue(new Error("Error en la petición: 409"));
+    api.registrarBus.mockRejectedValue(new Error("Error en la petición: 500"));
     render(<AdminBuses />);
+    await screen.findByText("Aún no hay buses registrados.");
 
     llenarFormulario("ABCD-12", "Transportes Norte");
     fireEvent.click(screen.getByRole("button", { name: "Guardar bus" }));

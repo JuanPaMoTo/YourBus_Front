@@ -1,10 +1,28 @@
-import { useState } from "react";
-import { api } from "../services/api";
+import { useEffect, useReducer, useState } from 'react';
+import { api } from '../services/api';
 
 export default function AdminBuses() {
-  const [form, setForm] = useState({ placa: "", empresa: "" });
+  const [form, setForm] = useState({ placa: '', empresa: '' });
+  const [buses, setBuses] = useState([]);
   const [mensaje, setMensaje] = useState(null);
   const [ok, setOk] = useState(false);
+
+  const [version, recargar] = useReducer((v) => v + 1, 0);
+
+  useEffect(() => {
+    let vigente = true;
+    api
+      .getBuses()
+      .then((lista) => vigente && setBuses(lista))
+      .catch((err) => {
+        if (!vigente) return;
+        setOk(false);
+        setMensaje(err.message);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [version]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -14,11 +32,12 @@ export default function AdminBuses() {
     try {
       await api.registrarBus(form);
       setOk(true);
-      setMensaje("Bus registrado correctamente.");
-      setForm({ placa: "", empresa: "" });
-    } catch {
+      setMensaje('Bus registrado correctamente.');
+      setForm({ placa: '', empresa: '' });
+      recargar();
+    } catch (err) {
       setOk(false);
-      setMensaje("No fue posible registrar el bus. Revisa los datos.");
+      setMensaje(err.status === 409 ? err.message : 'No fue posible registrar el bus. Revisa los datos.');
     }
   };
 
@@ -56,7 +75,21 @@ export default function AdminBuses() {
       </form>
 
       {mensaje && (
-        <p className={`state-msg ${ok ? "success" : "error"}`}>{mensaje}</p>
+        <p className={`state-msg ${ok ? 'success' : 'error'}`}>{mensaje}</p>
+      )}
+
+      <h2 className="subtitulo">Flota registrada</h2>
+      {buses.length === 0 ? (
+        <div className="empty-state">Aún no hay buses registrados.</div>
+      ) : (
+        <ul className="route-list">
+          {buses.map((b) => (
+            <li key={b.id} className="route-item">
+              <span className="route-code">{b.placa}</span>
+              <span className="route-name">{b.empresa}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );

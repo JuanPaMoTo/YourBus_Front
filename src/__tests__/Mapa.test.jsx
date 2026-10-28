@@ -1,97 +1,94 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import Mapa from "../pages/Mapa";
-import { api } from "../services/api";
+import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import Mapa from '../pages/Mapa';
+import { crearApiMock, renderConSesion } from './helpers';
 
-// Se reemplaza la API por un simulacro: la prueba no usa red ni backend.
-vi.mock("../services/api", () => ({
-  api: { getUbicacionBus: vi.fn(), getEta: vi.fn() },
+const apiMock = crearApiMock();
+vi.mock('../services/api', async (importOriginal) => ({
+  ...(await importOriginal()),
+  api: new Proxy({}, { get: (_, nombre) => apiMock[nombre] }),
+}));
+// Leaflet necesita un navegador real: aquí se reemplaza por un marcador de posición.
+vi.mock('../components/MapaVivo', () => ({
+  default: ({ buses, paraderoId }) => (
+    <div data-testid="mapa">
+      {buses.length} buses · paradero {paraderoId}
+    </div>
+  ),
 }));
 
-const ERROR_UBICACION = "La ubicación del bus no está disponible.";
-const ERROR_ETA = "El tiempo estimado de llegada no está disponible.";
+const RUTAS = [{ id: 'r1', codigo: 'L1', nombre: 'Terminal Norte - Centro' }];
+const PARADEROS = [
+  { id: 'p1', nombre: 'Terminal Norte', orden: 1, lat: -33.4015, lng: -70.6545 },
+  { id: 'p2', nombre: 'Plaza Central', orden: 2, lat: -33.4372, lng: -70.6506 },
+];
+const BUS = { turnoId: 't1', placa: 'ABCD-11', lat: -33.41, lng: -70.65, sinSenalReciente: false };
 
-function consultarUbicacion(busId) {
-  fireEvent.change(screen.getByLabelText("ID del bus"), {
-    target: { value: busId },
-  });
-  fireEvent.click(screen.getByRole("button", { name: "Ver ubicación" }));
-}
+beforeEach(() => {
+  localStorage.clear();
+  Object.values(apiMock).forEach((f) => f.mockReset?.());
+  apiMock.getRutas.mockResolvedValue(RUTAS);
+  apiMock.getParaderos.mockResolvedValue(PARADEROS);
+  apiMock.getBusesActivos.mockResolvedValue([]);
+});
 
-function consultarEta(paraderoId) {
-  fireEvent.change(screen.getByLabelText("ID del paradero"), {
-    target: { value: paraderoId },
-  });
-  fireEvent.click(screen.getByRole("button", { name: "Ver ETA" }));
-}
-
-// Pruebas de caja blanca: cada prueba recorre una rama de Mapa.jsx
-// (estado inicial, consulta correcta, consulta con error y limpieza del error).
-describe("Mapa", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("al inicio no muestra ubicación, ETA ni errores", () => {
-    render(<Mapa />);
-
-    expect(screen.queryByText("En ruta")).toBeNull();
-    expect(screen.queryByText(/ min$/)).toBeNull();
-    expect(screen.queryByText(ERROR_UBICACION)).toBeNull();
+describe('Mapa y ETA (pasajero)', () => {
+  it('carga la ruta, sus paraderos y avisa si no hay buses circulando', async () => {
+    renderConSesion(<Mapa />);
+    expect(await screen.findByText(/No hay buses en recorrido/)).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: '2. Plaza Central' })).toBeInTheDocument();
+    expect(apiMock.getParaderos).toHaveBeenCalledWith('r1');
   });
 
-  it("muestra la ubicación del bus consultado", async () => {
-    api.getUbicacionBus.mockResolvedValue({ lat: -33.437, lng: -70.6505 });
-    render(<Mapa />);
+  it('muestra cada bus en ruta con su ETA por calles', async () => {
+    apiMock.getBusesActivos.mockResolvedValue([BUS]);
+    apiMock.getEtaBus.mockResolvedValue({
+      estado: 'en_camino',
+      minutos: 8,
+      distanciaMetros: 2540,
+      paradasHastaLlegar: 2,
+      metodo: 'osrm',
+    });
+    renderConSesion(<Mapa />);
 
-    consultarUbicacion("BUS-102");
-
-    expect(await screen.findByText("En ruta")).toBeTruthy();
-    expect(screen.getByText(/Lat -33\.437/)).toBeTruthy();
-    expect(api.getUbicacionBus).toHaveBeenCalledWith("BUS-102");
+    expect(await screen.findByText('ABCD-11')).toBeInTheDocument();
+    expect(await screen.findByText('8 min')).toBeInTheDocument();
+    expect(screen.getByText(/2\.5 km por calles · 2 paradas/)).toBeInTheDocument();
+    expect(apiMock.getEtaBus).toHaveBeenCalledWith('t1', 'p1');
+    expect(screen.queryByText(/Aproximado/)).not.toBeInTheDocument();
   });
 
-  it("muestra un error cuando la ubicación no está disponible", async () => {
-    api.getUbicacionBus.mockRejectedValue(
-      new Error("Error en la petición: 404"),
+  it('avisa cuando el ETA es una estimación (el servicio de mapas no respondió)', async () => {
+    apiMock.getBusesActivos.mockResolvedValue([BUS]);
+    apiMock.getEtaBus.mockResolvedValue({
+      estado: 'en_camino',
+      minutos: 12,
+      distanciaMetros: 3000,
+      paradasHastaLlegar: 1,
+      metodo: 'estimacion_lineal',
+    });
+    renderConSesion(<Mapa />);
+    expect(await screen.findByText(/Aproximado/)).toBeInTheDocument();
+  });
+
+  it('si el bus ya pasó lo dice, y al cambiar de paradero consulta de nuevo', async () => {
+    apiMock.getBusesActivos.mockResolvedValue([BUS]);
+    apiMock.getEtaBus.mockImplementation(async (turno, paradero) =>
+      paradero === 'p1' ? { estado: 'ya_paso' } : { estado: 'en_camino', minutos: 5, distanciaMetros: 900, paradasHastaLlegar: 1, metodo: 'osrm' }
     );
-    render(<Mapa />);
+    renderConSesion(<Mapa />);
+    expect(await screen.findByText('Ya pasó por este paradero')).toBeInTheDocument();
 
-    consultarUbicacion("BUS-999");
-
-    expect(await screen.findByText(ERROR_UBICACION)).toBeTruthy();
-    expect(screen.queryByText("En ruta")).toBeNull();
+    await userEvent.selectOptions(screen.getByLabelText('Mi paradero'), 'p2');
+    expect(await screen.findByText('5 min')).toBeInTheDocument();
+    await waitFor(() => expect(apiMock.getEtaBus).toHaveBeenCalledWith('t1', 'p2'));
   });
 
-  it("muestra el tiempo estimado de llegada de un paradero", async () => {
-    api.getEta.mockResolvedValue({ minutos: 8 });
-    render(<Mapa />);
-
-    consultarEta("P-045");
-
-    expect(await screen.findByText("8 min")).toBeTruthy();
-    expect(api.getEta).toHaveBeenCalledWith("P-045");
-  });
-
-  it("muestra un error cuando el ETA no está disponible", async () => {
-    api.getEta.mockRejectedValue(new Error("Error en la petición: 404"));
-    render(<Mapa />);
-
-    consultarEta("P-000");
-
-    expect(await screen.findByText(ERROR_ETA)).toBeTruthy();
-  });
-
-  it("borra el error anterior cuando la siguiente consulta funciona", async () => {
-    api.getUbicacionBus.mockRejectedValueOnce(new Error("falló"));
-    api.getUbicacionBus.mockResolvedValueOnce({ lat: 1, lng: 2 });
-    render(<Mapa />);
-
-    consultarUbicacion("BUS-1");
-    expect(await screen.findByText(ERROR_UBICACION)).toBeTruthy();
-
-    consultarUbicacion("BUS-1");
-    expect(await screen.findByText("En ruta")).toBeTruthy();
-    await waitFor(() => expect(screen.queryByText(ERROR_UBICACION)).toBeNull());
+  it('marca un bus sin señal reciente', async () => {
+    apiMock.getBusesActivos.mockResolvedValue([{ ...BUS, sinSenalReciente: true }]);
+    apiMock.getEtaBus.mockResolvedValue({ estado: 'sin_ubicacion' });
+    renderConSesion(<Mapa />);
+    expect(await screen.findByText('Sin señal reciente')).toBeInTheDocument();
   });
 });

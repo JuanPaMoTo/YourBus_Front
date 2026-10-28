@@ -6,10 +6,15 @@ Frontend del sistema de transporte público **YourBus**, construido con **React 
 
 ```
 src/
-├── components/       # Navbar, Footer
-├── pages/            # Home, Rutas, Paraderos, Horarios, Mapa, Notificaciones, AdminBuses
-├── services/api.js   # Cliente único hacia el backend (usa VITE_API_URL)
-└── __tests__/        # Pruebas de componentes (Vitest + Testing Library)
+├── components/       # Navbar, RutaProtegida, Calendario, MapaVivo (Leaflet), RecorridoEnCurso
+├── context/          # AuthProvider: sesión y rol del usuario
+├── hooks/            # usePolling, useGeolocalizacion, useEnvioUbicacion (GPS del conductor)
+├── pages/            # Home, Rutas, Paraderos, Horarios, Mapa, Login, Registro,
+│                     # ConductorTurnos, AdminTurnos, AdminUsuarios, AdminBuses
+├── services/api.js   # Cliente único hacia el backend (usa VITE_API_URL) + sesión
+├── utils/            # fechas, geo
+└── __tests__/        # Pruebas (Vitest + Testing Library)
+.husky/               # Hooks de git: lint al commit, pruebas al push
 ```
 
 ## Requisitos
@@ -27,6 +32,18 @@ npm run dev
 
 Abre `http://localhost:5173`.
 
+## Roles y pantallas
+
+| Rol | Pantallas |
+|---|---|
+| Pasajero (se registra en `/registro`) | `/mapa`: ve su GPS, el paradero más cercano, los buses en vivo y el tiempo de llegada calculado por calles |
+| Conductor (lo crea el admin) | `/conductor`: calendario/lista de sus turnos; botón **Iniciar recorrido** que transmite el GPS del celular cada 5 s hasta **Finalizar** |
+| Administrador de terminal | `/admin/turnos` (asigna ruta, bus y horario a cada conductor), `/admin/usuarios`, `/admin/buses` |
+
+Las rutas protegidas redirigen a `/login` si no hay sesión. La sesión se guarda en `localStorage` y se cierra sola si el servidor responde 401.
+
+**GPS:** el navegador pide permiso de ubicación y requiere **HTTPS** (los App Service lo dan). En el celular del conductor, mantén la pestaña abierta: la app pide mantener la pantalla encendida (Wake Lock) cuando el navegador lo permite.
+
 ## Variables de entorno
 
 | Variable       | Descripción                          | Ejemplo                             |
@@ -40,10 +57,17 @@ npm run dev       # servidor de desarrollo
 npm run build     # build de producción (dist/)
 npm run preview   # sirve el build de producción localmente
 npm run lint       # análisis estático (oxlint)
-npm test          # pruebas de componentes (vitest)
+npm test          # pruebas (vitest)
+npm run test:coverage  # pruebas + cobertura (lcov/cobertura para SonarCloud)
 ```
 
 Estos mismos comandos (`lint` y `test`) son el **Quality Gate** que ejecuta el pipeline de Azure antes de permitir el despliegue — ver `.pipeline/azure-pipelines.yml`.
+
+## Husky y SonarCloud
+
+`npm install` activa Husky: `npm run lint` antes de cada commit y `npm test` antes de cada push (en CI se desactiva con `HUSKY=0`).
+
+El pipeline trae las tareas de SonarCloud apagadas (`runSonar: 'false'`). Para activarlas sigue la sección *SonarCloud* del README de `YourBus_Back` (extensión SonarQube Cloud, organización, token, service connection `SonarCloud`) creando aquí un segundo proyecto, y edita `sonarOrganization`, `sonarProjectKey` y `runSonar: 'true'` en `.pipeline/azure-pipelines.yml`.
 
 ## Despliegue
 

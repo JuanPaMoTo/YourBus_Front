@@ -1,5 +1,5 @@
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -10,9 +10,11 @@ export default defineConfig({
     setupFiles: './src/setupTests.js',
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
       include: ['src/**/*.{js,jsx}'],
-      exclude: ['src/main.jsx', 'src/setupTests.js', 'src/__tests__/**'],
+      exclude: ['src/__tests__/**', 'src/main.jsx', 'src/setupTests.js'],
+      // lcov: lo lee SonarCloud · cobertura: lo muestra Azure DevOps · text: consola
+      reporter: ['text', 'lcov', 'cobertura'],
+      reportsDirectory: 'coverage',
     },
   },
 })
