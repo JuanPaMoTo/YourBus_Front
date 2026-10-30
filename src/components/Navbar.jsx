@@ -30,7 +30,7 @@ export default function Navbar() {
 
   const salir = () => {
     cerrarSesion();
-    navegar('/');
+    void navegar('/');
   };
 
   return (

@@ -43,10 +43,20 @@ export function leerSesionGuardada() {
   }
 }
 
+// Solo se guardan los campos conocidos y siempre como texto (nunca el objeto crudo
+// de la respuesta del servidor).
+function sesionSegura(sesion) {
+  const { id, nombre, email, rol } = sesion.usuario || {};
+  return {
+    token: String(sesion.token),
+    usuario: { id: String(id), nombre: String(nombre), email: String(email), rol: String(rol) },
+  };
+}
+
 export function guardarSesion(sesion) {
   token = sesion ? sesion.token : null;
   try {
-    if (sesion) localStorage.setItem(CLAVE_SESION, JSON.stringify(sesion));
+    if (sesion) localStorage.setItem(CLAVE_SESION, JSON.stringify(sesionSegura(sesion)));
     else localStorage.removeItem(CLAVE_SESION);
   } catch {
     // sin almacenamiento: la sesión dura solo mientras la pestaña esté abierta

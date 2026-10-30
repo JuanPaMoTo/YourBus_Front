@@ -85,10 +85,10 @@ export function useEnvioUbicacion(turnoId, activo, { intervaloMs = 5000, alPerde
     };
     // El candado se pierde al ocultar la pestaña; se vuelve a pedir al volver.
     const alCambiarVisibilidad = () => {
-      if (document.visibilityState === 'visible') pedir();
+      if (document.visibilityState === 'visible') void pedir();
     };
 
-    pedir();
+    void pedir();
     document.addEventListener('visibilitychange', alCambiarVisibilidad);
     return () => {
       terminado = true;

@@ -23,7 +23,7 @@ export default function Registro() {
     try {
       const { nombre, email, password } = form;
       const usuario = await registrar({ nombre, email, password });
-      navegar(rutaInicial(usuario.rol), { replace: true });
+      void navegar(rutaInicial(usuario.rol), { replace: true });
     } catch (err) {
       setError(err.message);
       setEnviando(false);

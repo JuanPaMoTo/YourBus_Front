@@ -19,7 +19,7 @@ export default function Login() {
     setEnviando(true);
     try {
       const usuario = await iniciarSesion(form.email, form.password);
-      navegar((ubicacion.state && ubicacion.state.desde) || rutaInicial(usuario.rol), {
+      void navegar((ubicacion.state && ubicacion.state.desde) || rutaInicial(usuario.rol), {
         replace: true,
       });
     } catch (err) {
