@@ -14,6 +14,7 @@ import ConductorTurnos from './pages/ConductorTurnos';
 import AdminTurnos from './pages/AdminTurnos';
 import AdminUsuarios from './pages/AdminUsuarios';
 import AdminBuses from './pages/AdminBuses';
+import AdminIncidentes from './pages/AdminIncidentes';
 import './App.css';
 
 function App() {
@@ -59,6 +60,14 @@ function App() {
             element={
               <RutaProtegida roles={['admin']}>
                 <AdminBuses />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/admin/incidentes"
+            element={
+              <RutaProtegida roles={['admin']}>
+                <AdminIncidentes />
               </RutaProtegida>
             }
           />

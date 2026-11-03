@@ -132,6 +132,8 @@ export const api = {
   getEtaBus: (turnoId, paraderoId) =>
     request(`/turnos/${turnoId}/eta${consulta({ paraderoId })}`),
   getEstadoRuta: (rutaId) => request(`/rutas/${rutaId}/estado`),
+  getIncidentesActivos: () => request('/incidentes/activos'),
+  getIncidentesRuta: (rutaId) => request(`/rutas/${rutaId}/incidentes`),
 
   // Sesión
   login: (email, password) => enviar('POST', '/auth/login', { email, password }),
@@ -143,6 +145,7 @@ export const api = {
   iniciarTurno: (id) => enviar('POST', `/turnos/${id}/iniciar`),
   enviarUbicacion: (id, posicion) => enviar('POST', `/turnos/${id}/ubicacion`, posicion),
   finalizarTurno: (id) => enviar('POST', `/turnos/${id}/finalizar`),
+  reportarIncidente: (datos) => enviar('POST', '/incidentes', datos),
 
   // Administrador de la terminal
   getTurnos: (filtros = {}) => request(`/turnos${consulta(filtros)}`),
@@ -155,4 +158,6 @@ export const api = {
   cambiarActivoUsuario: (id, activo) => enviar('PATCH', `/usuarios/${id}`, { activo }),
   getBuses: () => request('/buses'),
   registrarBus: (data) => enviar('POST', '/buses', data),
+  getIncidentes: (estado) => request(`/incidentes${consulta({ estado })}`),
+  cambiarEstadoIncidente: (id, estado) => enviar('PATCH', `/incidentes/${id}/estado`, { estado }),
 };

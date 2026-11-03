@@ -392,7 +392,7 @@ label {
   display: block;
 }
 
-input {
+input, textarea {
   padding: 0.7rem 0.9rem;
   border: 1.5px solid var(--line);
   border-radius: var(--radius-sm);
@@ -403,7 +403,7 @@ input {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-input:focus {
+input:focus, textarea:focus {
   border-color: var(--amber);
   box-shadow: 0 0 0 3px rgba(255, 182, 39, 0.18);
 }
@@ -438,6 +438,7 @@ input:focus {
 
 .route-item {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.1rem;
@@ -948,3 +949,53 @@ a { color: #7db8ff; }
   .layout-two, .layout-mapa { grid-template-columns: 1fr; }
   .mapa-leaflet { height: 340px; }
 }
+
+/* ---------- Incidentes y alertas ---------- */
+
+textarea { width: 100%; font-family: var(--font-body); resize: vertical; }
+.contador { display: block; margin-top: 0.3rem; text-align: right; color: var(--slate); font-size: 0.75rem; }
+
+.reporte-incidente { margin-bottom: 1.5rem; }
+.reporte-incidente.panel { display: flex; flex-direction: column; gap: 1rem; }
+.reporte-acciones { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+.incidente-lista, .route-avisos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.route-avisos { flex-basis: 100%; margin-top: 0.4rem; }
+
+.incidente {
+  --color: var(--l5);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--color);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.incidente-cuerpo { flex: 1; min-width: 12rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.incidente-cuerpo p { color: var(--text); font-size: 0.92rem; }
+.incidente-cuerpo small { color: var(--slate); font-size: 0.78rem; }
+
+.incidente-tipo {
+  min-width: 6.4rem;
+  text-align: center;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color) 20%, transparent);
+  color: var(--color);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.incidente-accidente { --color: #ff4d6d; }
+.incidente-bloqueo { --color: #ff7a3d; }
+.incidente-clima { --color: #4da3ff; }
+.incidente-retraso { --color: #ffb627; }
+.incidente-otro { --color: #a78bfa; }
+.incidente-cerrado { opacity: 0.6; }

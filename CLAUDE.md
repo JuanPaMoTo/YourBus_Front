@@ -28,4 +28,4 @@ Frontend de YourBus (rastreo de buses): React 19 + Vite + React Router 7 + Leafl
 1 Compile/Build → 2 Quality Gates (lint, pruebas, SonarCloud) → 3 Package → 4 Deploy DEV → 5 Deploy QA → 6 Seguridad (solo ZAP) y 7 Rendimiento (Lighthouse) en paralelo → 8 Deploy PROD. No mezclar análisis de rendimiento dentro de Seguridad.
 
 ## Pendiente (al 2 de noviembre de 2026, según el tablero y el código)
-Faltan las historias de incidentes y alertas: HU14, HU15, HU16 (incidentes), HU08 y HU07 (alertas y notificaciones; `Notificaciones.jsx` es un placeholder), además de HU12 (administrar paraderos) y HU13 (administrar horarios). Las historias están en Azure DevOps Boards.
+Incidentes y alertas ya implementados (HU14, HU15, HU16, HU08; HU07 cubierta como aviso dentro de la app, sin notificaciones push): el conductor reporta desde `ReporteIncidente` (en Mis turnos), el administrador los gestiona en `/admin/incidentes`, y los pasajeros los ven en `/notificaciones` y bajo cada ruta en `/rutas`. Faltan HU12 (administrar paraderos) y HU13 (administrar horarios). Las historias están en Azure DevOps Boards.

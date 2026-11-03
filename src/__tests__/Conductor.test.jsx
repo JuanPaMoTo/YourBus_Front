@@ -58,6 +58,12 @@ describe('Mis turnos (conductor)', () => {
     expect(screen.getAllByRole('columnheader')).toHaveLength(7);
   });
 
+  it('ofrece el botón para reportar un incidente', async () => {
+    apiMock.misTurnos.mockResolvedValue([]);
+    renderConSesion(<ConductorTurnos />, { usuario: CONDUCTOR, api: apiMock });
+    expect(await screen.findByRole('button', { name: 'Reportar incidente' })).toBeInTheDocument();
+  });
+
   it('un día sin turnos lo dice', async () => {
     apiMock.misTurnos.mockResolvedValue([]);
     renderConSesion(<ConductorTurnos />, { usuario: CONDUCTOR, api: apiMock });

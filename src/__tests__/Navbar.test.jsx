@@ -29,6 +29,7 @@ describe('Navbar', () => {
     expect(screen.getByText('Ingresar')).toBeInTheDocument();
     expect(screen.queryByText('Mis turnos')).not.toBeInTheDocument();
     expect(screen.queryByText('Flota')).not.toBeInTheDocument();
+    expect(screen.queryByText('Incidentes')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Salir' })).not.toBeInTheDocument();
   });
 
@@ -45,6 +46,7 @@ describe('Navbar', () => {
     expect(screen.getByText('Turnos')).toBeInTheDocument();
     expect(screen.getByText('Usuarios')).toBeInTheDocument();
     expect(screen.getByText('Flota')).toBeInTheDocument();
+    expect(screen.getByText('Incidentes')).toBeInTheDocument();
     expect(screen.queryByText('Ingresar')).not.toBeInTheDocument();
   });
 

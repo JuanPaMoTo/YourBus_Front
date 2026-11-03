@@ -122,3 +122,52 @@ describe("api: el resto de los endpoints", () => {
     expect(fetchMock.mock.calls[0][0]).toMatch(patron);
   });
 });
+
+describe("api: incidentes", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const simular = () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  };
+
+  it("getIncidentesActivos y getIncidentesRuta consultan la dirección correcta", async () => {
+    const fetchMock = simular();
+    await api.getIncidentesActivos();
+    await api.getIncidentesRuta("L1");
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/incidentes\/activos$/);
+    expect(fetchMock.mock.calls[1][0]).toMatch(/\/rutas\/L1\/incidentes$/);
+  });
+
+  it("reportarIncidente envía los datos con POST", async () => {
+    const fetchMock = simular();
+    const datos = { rutaId: "r1", tipo: "bloqueo", descripcion: "Calle cerrada" };
+    await api.reportarIncidente(datos);
+    const [url, opciones] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/incidentes$/);
+    expect(opciones.method).toBe("POST");
+    expect(opciones.body).toBe(JSON.stringify(datos));
+  });
+
+  it("getIncidentes filtra por estado y omite el filtro vacío", async () => {
+    const fetchMock = simular();
+    await api.getIncidentes("activo");
+    await api.getIncidentes("");
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/incidentes\?estado=activo$/);
+    expect(fetchMock.mock.calls[1][0]).toMatch(/\/incidentes$/);
+  });
+
+  it("cambiarEstadoIncidente usa PATCH", async () => {
+    const fetchMock = simular();
+    await api.cambiarEstadoIncidente("i1", "finalizado");
+    const [url, opciones] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/incidentes\/i1\/estado$/);
+    expect(opciones.method).toBe("PATCH");
+    expect(opciones.body).toBe(JSON.stringify({ estado: "finalizado" }));
+  });
+});

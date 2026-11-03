@@ -31,6 +31,11 @@ export function crearApiMock() {
     cambiarActivoUsuario: vi.fn(),
     getBuses: vi.fn().mockResolvedValue([]),
     registrarBus: vi.fn(),
+    getIncidentesActivos: vi.fn().mockResolvedValue([]),
+    getIncidentesRuta: vi.fn().mockResolvedValue([]),
+    reportarIncidente: vi.fn(),
+    getIncidentes: vi.fn().mockResolvedValue([]),
+    cambiarEstadoIncidente: vi.fn(),
   };
 }
 

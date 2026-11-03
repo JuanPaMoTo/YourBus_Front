@@ -2,6 +2,7 @@ import { useEffect, useMemo, useReducer, useState } from 'react';
 import { api } from '../services/api';
 import Calendario from '../components/Calendario';
 import RecorridoEnCurso from '../components/RecorridoEnCurso';
+import ReporteIncidente from '../components/ReporteIncidente';
 import { formatearFecha, hoyTexto, primerYUltimoDia, sumarDias } from '../utils/fechas';
 
 const ETIQUETA = {
@@ -95,6 +96,8 @@ export default function ConductorTurnos() {
           onPerdido={recargar}
         />
       )}
+
+      <ReporteIncidente rutaSugerida={enCurso ? enCurso.ruta.id : null} />
 
       <div className="layout-two">
         <Calendario
