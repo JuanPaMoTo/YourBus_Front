@@ -11,7 +11,10 @@ describe("Home", () => {
       </BrowserRouter>,
     );
     expect(
-      screen.getByText(/Sabe exactamente cuándo llega tu bus/i),
+      screen.getByRole("heading", {
+        level: 1,
+        name: /Sabe exactamente cuándo llega tu bus/i,
+      }),
     ).toBeInTheDocument();
   });
 });

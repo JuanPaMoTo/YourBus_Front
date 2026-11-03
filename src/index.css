@@ -1,14 +1,19 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap");
 
 :root {
-  --navy: #12203d;
-  --navy-soft: #1c3159;
+  --navy: #0b1226;
+  --navy-soft: #1a2750;
+  --bg: #070c1b;
+  --surface: #101933;
+  --surface-2: #16224a;
+  --text: #f4f2ec;
+  --muted: #a9b3c9;
   --amber: #ffb627;
   --amber-dim: #a8791f;
   --cream: #f7f5f0;
-  --ink: #1b1f27;
-  --slate: #5b6472;
-  --line: #e3ded2;
+  --ink: #f4f2ec;
+  --slate: #a9b3c9;
+  --line: rgba(255, 255, 255, 0.12);
   --green: #2f9e63;
   --red: #d64545;
 
@@ -26,13 +31,13 @@
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 22px;
-  --shadow-card:
-    0 1px 2px rgba(18, 32, 61, 0.05), 0 10px 24px -16px rgba(18, 32, 61, 0.25);
-  --shadow-pop: 0 20px 40px -20px rgba(18, 32, 61, 0.35);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 14px 30px -18px rgba(0, 0, 0, 0.7);
+  --shadow-pop: 0 24px 48px -20px rgba(0, 0, 0, 0.8);
 
-  color-scheme: light;
-  color: var(--ink);
-  background: var(--cream);
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -48,8 +53,8 @@ body {
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.55;
-  background: var(--cream);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text);
 }
 
 #root {
@@ -62,7 +67,7 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  color: var(--navy);
+  color: var(--text);
   margin: 0;
   line-height: 1.15;
 }
@@ -85,7 +90,7 @@ p {
 }
 
 a {
-  color: inherit;
+  color: #7db8ff;
 }
 
 button {
@@ -98,7 +103,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--amber-dim);
+  outline: 2px solid var(--amber);
   outline-offset: 2px;
 }
 
