@@ -13,7 +13,7 @@
 #     yourbus-front-dev / yourbus-front-qa / yourbus-front-prod
 #
 # El front es un sitio estático (carpeta dist de Vite). En App Service Linux se
-# sirve con pm2 (--spa hace que las rutas de React Router no den 404 al recargar).
+# sirve con deploy/server.cjs: fallback de SPA para React Router + cabeceras de seguridad.
 # La URL del backend la elige src/services/api.js según el dominio del front.
 #
 # Inspección de código con SonarCloud: ACTIVADA (runSonar = 'true').
@@ -120,6 +120,10 @@ stages:
           - script: npm run build
             displayName: 'Compilar (vite build)'
 
+          # Servidor propio (sin dependencias) que sirve dist/ con cabeceras de seguridad.
+          - script: cp deploy/server.cjs dist/server.cjs
+            displayName: 'Incluir servidor estático con cabeceras de seguridad'
+
           - publish: '$(System.DefaultWorkingDirectory)/dist'
             artifact: 'frontend-dist'
             displayName: 'Publicar artefacto compilado'
@@ -178,7 +182,7 @@ stages:
                     appName: 'yourbus-front-dev'
                     package: '$(Pipeline.Workspace)/frontend-package/*.zip'
                     runtimeStack: 'NODE|22-lts'
-                    startUpCommand: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
+                    startUpCommand: 'node /home/site/wwwroot/server.cjs'
 
                 - script: |
                     URL="https://yourbus-front-dev-cvesf3apbsa9gpcg.chilecentral-01.azurewebsites.net"
@@ -288,7 +292,7 @@ stages:
                     appName: 'yourbus-front-qa'
                     package: '$(Pipeline.Workspace)/frontend-package/*.zip'
                     runtimeStack: 'NODE|22-lts'
-                    startUpCommand: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
+                    startUpCommand: 'node /home/site/wwwroot/server.cjs'
 
                 # --- Quality Gate de QA: pruebas contra el sitio ya desplegado ---
                 - script: |
@@ -339,7 +343,7 @@ stages:
                     appName: 'yourbus-front-prod'
                     package: '$(Pipeline.Workspace)/frontend-package/*.zip'
                     runtimeStack: 'NODE|22-lts'
-                    startUpCommand: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
+                    startUpCommand: 'node /home/site/wwwroot/server.cjs'
 
                 - script: |
                     URL="https://yourbus-front-prod-ckeqapbpexdpfkbb.chilecentral-01.azurewebsites.net"
