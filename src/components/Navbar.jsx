@@ -19,6 +19,7 @@ const POR_ROL = {
     { to: '/admin/usuarios', label: 'Usuarios' },
     { to: '/admin/buses', label: 'Flota' },
     { to: '/admin/incidentes', label: 'Incidentes' },
+    { to: '/admin/configuracion', label: 'Configuración' },
   ],
 };
 

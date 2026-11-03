@@ -158,6 +158,12 @@ export const api = {
   cambiarActivoUsuario: (id, activo) => enviar('PATCH', `/usuarios/${id}`, { activo }),
   getBuses: () => request('/buses'),
   registrarBus: (data) => enviar('POST', '/buses', data),
+  agregarParadero: (rutaId, datos) => enviar('POST', `/rutas/${rutaId}/paraderos`, datos),
+  editarParadero: (id, datos) => enviar('PUT', `/paraderos/${id}`, datos),
+  eliminarParadero: (id) => enviar('DELETE', `/paraderos/${id}`),
+  agregarHorario: (rutaId, datos) => enviar('POST', `/rutas/${rutaId}/horarios`, datos),
+  editarHorario: (id, datos) => enviar('PUT', `/horarios/${id}`, datos),
+  eliminarHorario: (id) => enviar('DELETE', `/horarios/${id}`),
   getIncidentes: (estado) => request(`/incidentes${consulta({ estado })}`),
   cambiarEstadoIncidente: (id, estado) => enviar('PATCH', `/incidentes/${id}/estado`, { estado }),
 };

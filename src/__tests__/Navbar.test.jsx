@@ -47,6 +47,7 @@ describe('Navbar', () => {
     expect(screen.getByText('Usuarios')).toBeInTheDocument();
     expect(screen.getByText('Flota')).toBeInTheDocument();
     expect(screen.getByText('Incidentes')).toBeInTheDocument();
+    expect(screen.getByText('Configuración')).toBeInTheDocument();
     expect(screen.queryByText('Ingresar')).not.toBeInTheDocument();
   });
 

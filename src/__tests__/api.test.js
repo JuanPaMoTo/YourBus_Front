@@ -171,3 +171,28 @@ describe("api: incidentes", () => {
     expect(opciones.body).toBe(JSON.stringify({ estado: "finalizado" }));
   });
 });
+
+describe("api: paraderos y horarios (administrador)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ["agregarParadero", ["L1", { nombre: "A" }], "POST", /\/rutas\/L1\/paraderos$/],
+    ["editarParadero", ["p1", { orden: 2 }], "PUT", /\/paraderos\/p1$/],
+    ["eliminarParadero", ["p1"], "DELETE", /\/paraderos\/p1$/],
+    ["agregarHorario", ["L1", { jornada: "M", hora: "6" }], "POST", /\/rutas\/L1\/horarios$/],
+    ["editarHorario", ["h1", { hora: "7" }], "PUT", /\/horarios\/h1$/],
+    ["eliminarHorario", ["h1"], "DELETE", /\/horarios\/h1$/],
+  ])("%s usa el método y la dirección correctos", async (metodo, args, verbo, patron) => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const respuesta = await api[metodo](...args);
+    const [url, opciones] = fetchMock.mock.calls[0];
+    expect(url).toMatch(patron);
+    expect(opciones.method).toBe(verbo);
+    expect(respuesta).toBeNull();
+  });
+});
+

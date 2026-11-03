@@ -36,6 +36,13 @@ export function crearApiMock() {
     reportarIncidente: vi.fn(),
     getIncidentes: vi.fn().mockResolvedValue([]),
     cambiarEstadoIncidente: vi.fn(),
+    getHorarios: vi.fn().mockResolvedValue([]),
+    agregarParadero: vi.fn(),
+    editarParadero: vi.fn(),
+    eliminarParadero: vi.fn(),
+    agregarHorario: vi.fn(),
+    editarHorario: vi.fn(),
+    eliminarHorario: vi.fn(),
   };
 }
 
