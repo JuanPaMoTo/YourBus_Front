@@ -1,8 +1,10 @@
 # .pipeline/azure-pipelines.yml — YourBus_Front
 #
-# Flujo DevOps: 3 etapas secuenciales (Compile/Build -> Package -> Deploy).
-# La etapa Deploy promueve el mismo artefacto por DEV -> QA -> PROD.
-# QA corre pruebas adicionales antes de habilitar el paso a PROD.
+# Flujo DevOps (cada caja del pipeline tiene un solo propósito):
+#   1. Compile / Build -> 2. Quality Gates (lint, pruebas, SonarCloud) -> 3. Package
+#   -> 4. Deploy DEV -> 5. Deploy QA -> 6. Seguridad (ZAP) y 7. Rendimiento (Lighthouse)
+#   (en paralelo, sobre QA) -> 8. Deploy PROD (con aprobación manual).
+# Se promueve el mismo artefacto por DEV -> QA -> PROD; PROD espera a los análisis.
 #
 # Requisitos previos en Azure DevOps (se configuran una vez, en el portal):
 #   - 3 "Environments" creados: yourbus-front-dev, yourbus-front-qa, yourbus-front-prod
@@ -42,13 +44,51 @@ variables:
 stages:
 
   # ---------------------------------------------------------------------
-  # 1) COMPILE / BUILD — instala dependencias, corre Quality Gates y compila
+  # 1) COMPILE / BUILD — instala dependencias y compila el sitio
   # ---------------------------------------------------------------------
   - stage: Build
     displayName: '1. Compile / Build'
     jobs:
-      - job: BuildAndValidate
-        displayName: 'Instalar, analizar y compilar'
+      - job: Compile
+        displayName: 'Instalar y compilar'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Usar Node.js $(nodeVersion)'
+
+          # HUSKY=0: los hooks de git son para el computador del desarrollador, no para CI.
+          - script: npm ci
+            displayName: 'npm ci'
+            env:
+              HUSKY: '0'
+
+          - script: npm run build
+            displayName: 'Compilar (vite build)'
+
+          # Servidor propio (sin dependencias) que sirve dist/ con cabeceras de seguridad.
+          - script: cp deploy/server.cjs dist/server.cjs
+            displayName: 'Incluir servidor estático con cabeceras de seguridad'
+
+          - publish: '$(System.DefaultWorkingDirectory)/dist'
+            artifact: 'frontend-dist'
+            displayName: 'Publicar artefacto compilado'
+
+  # ---------------------------------------------------------------------
+  # 2) QUALITY GATES — lint, pruebas con cobertura y SonarCloud.
+  #    Si algo falla aquí, no se empaqueta ni se despliega nada.
+  # ---------------------------------------------------------------------
+  - stage: QualityGates
+    displayName: '2. Quality Gates'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: LintPruebasSonar
+        displayName: 'Lint, pruebas y SonarCloud'
         pool:
           vmImage: 'ubuntu-latest'
         steps:
@@ -117,23 +157,12 @@ stages:
             inputs:
               pollingTimeoutSec: '300'
 
-          - script: npm run build
-            displayName: 'Compilar (vite build)'
-
-          # Servidor propio (sin dependencias) que sirve dist/ con cabeceras de seguridad.
-          - script: cp deploy/server.cjs dist/server.cjs
-            displayName: 'Incluir servidor estático con cabeceras de seguridad'
-
-          - publish: '$(System.DefaultWorkingDirectory)/dist'
-            artifact: 'frontend-dist'
-            displayName: 'Publicar artefacto compilado'
-
   # ---------------------------------------------------------------------
-  # 2) PACKAGE — empaqueta el sitio estático listo para desplegar
+  # 3) PACKAGE — empaqueta el sitio estático listo para desplegar
   # ---------------------------------------------------------------------
   - stage: Package
-    displayName: '2. Package'
-    dependsOn: Build
+    displayName: '3. Package'
+    dependsOn: QualityGates
     condition: succeeded()
     jobs:
       - job: PackageArtifact
@@ -158,10 +187,10 @@ stages:
             displayName: 'Publicar paquete final'
 
   # ---------------------------------------------------------------------
-  # 3) DEPLOY — promoción secuencial DEV -> QA -> PROD
+  # DEPLOY — el mismo artefacto se promueve DEV (4) -> QA (5) -> PROD (8)
   # ---------------------------------------------------------------------
   - stage: Deploy_DEV
-    displayName: '3. Deploy - DEV'
+    displayName: '4. Deploy - DEV'
     dependsOn: Package
     condition: succeeded()
     jobs:
@@ -205,73 +234,8 @@ stages:
                     fi
                   displayName: 'Verificación post-despliegue en DEV'
 
-  # ---------------------------------------------------------------------
-  # SEGURIDAD Y CALIDAD WEB — corre en DEV, en paralelo con QA y sin bloquearlo:
-  # los informes quedan como artefactos descargables de la ejecución.
-  # ---------------------------------------------------------------------
-  - stage: Security_DEV
-    displayName: '4. Seguridad (ZAP) y Lighthouse - DEV'
-    dependsOn: Deploy_DEV
-    condition: succeeded()
-    jobs:
-      - job: ZAP_Front
-        displayName: 'OWASP ZAP sobre el front de DEV'
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
-          # Escaneo "baseline" de OWASP ZAP: pasivo (no ataca ni modifica datos),
-          # revisa cabeceras, cookies y configuración según el OWASP Top 10.
-          - script: |
-              OUT="$(Build.ArtifactStagingDirectory)/zap"
-              mkdir -p "$OUT" && chmod 777 "$OUT"
-              docker run --rm -v "$OUT":/zap/wrk:rw -t ghcr.io/zaproxy/zaproxy:stable \
-                zap-baseline.py -t "https://yourbus-front-dev-cvesf3apbsa9gpcg.chilecentral-01.azurewebsites.net" -r reporte-zap.html -J reporte-zap.json -I
-            displayName: 'OWASP ZAP: escaneo baseline'
-            continueOnError: true
-
-          - publish: '$(Build.ArtifactStagingDirectory)/zap'
-            artifact: 'reporte-zap-front'
-            displayName: 'Publicar informe de ZAP'
-            condition: succeededOrFailed()
-
-      - job: Lighthouse
-        displayName: 'Lighthouse sobre el front de DEV'
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '22.x'
-            displayName: 'Usar Node.js 22'
-
-          # Auditoría de Google: rendimiento, accesibilidad, buenas prácticas y SEO.
-          - script: |
-              mkdir -p "$(Build.ArtifactStagingDirectory)/lighthouse"
-              export CHROME_PATH="$(which google-chrome)"
-              npx --yes lighthouse@12.6.0 "https://yourbus-front-dev-cvesf3apbsa9gpcg.chilecentral-01.azurewebsites.net" \
-                --chrome-flags="--headless=new --no-sandbox" \
-                --only-categories=performance,accessibility,best-practices,seo \
-                --output=html --output=json \
-                --output-path="$(Build.ArtifactStagingDirectory)/lighthouse/reporte-lighthouse" \
-                --quiet
-            displayName: 'Lighthouse: auditar la página'
-            continueOnError: true
-
-          - script: |
-              node -e "
-              const r = require('$(Build.ArtifactStagingDirectory)/lighthouse/reporte-lighthouse.report.json');
-              for (const [k, v] of Object.entries(r.categories)) console.log(v.title + ': ' + Math.round(v.score * 100) + '/100');
-              "
-            displayName: 'Lighthouse: mostrar notas'
-            continueOnError: true
-
-          - publish: '$(Build.ArtifactStagingDirectory)/lighthouse'
-            artifact: 'reporte-lighthouse'
-            displayName: 'Publicar informe de Lighthouse'
-            condition: succeededOrFailed()
-
   - stage: Deploy_QA
-    displayName: '3. Deploy - QA'
+    displayName: '5. Deploy - QA'
     dependsOn: Deploy_DEV
     condition: succeeded()
     jobs:
@@ -319,9 +283,88 @@ stages:
                 # Punto de extensión: aquí se agregarían pruebas E2E
                 # (Cypress/Playwright) contra el entorno QA antes de aprobar PROD.
 
-  - stage: Deploy_PROD
-    displayName: '3. Deploy - PROD'
+  # ---------------------------------------------------------------------
+  # 6) SEGURIDAD — solo análisis de seguridad (OWASP ZAP, pasivo) sobre QA.
+  #    Los informes quedan como artefactos descargables de la ejecución.
+  # ---------------------------------------------------------------------
+  - stage: Security_QA
+    displayName: '6. Seguridad (ZAP) - QA'
     dependsOn: Deploy_QA
+    condition: succeeded()
+    jobs:
+      - job: ZAP_Front
+        displayName: 'OWASP ZAP sobre el front de QA'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          # Escaneo "baseline" de OWASP ZAP: pasivo (no ataca ni modifica datos),
+          # revisa cabeceras, cookies y configuración según el OWASP Top 10.
+          - script: |
+              OUT="$(Build.ArtifactStagingDirectory)/zap"
+              mkdir -p "$OUT" && chmod 777 "$OUT"
+              docker run --rm -v "$OUT":/zap/wrk:rw -t ghcr.io/zaproxy/zaproxy:stable \
+                zap-baseline.py -t "https://yourbus-front-qa-b4cue0d0a9c0ghc0.chilecentral-01.azurewebsites.net" -r reporte-zap.html -J reporte-zap.json -I
+            displayName: 'OWASP ZAP: escaneo baseline'
+            continueOnError: true
+
+          - publish: '$(Build.ArtifactStagingDirectory)/zap'
+            artifact: 'reporte-zap-front'
+            displayName: 'Publicar informe de ZAP'
+            condition: succeededOrFailed()
+
+  # ---------------------------------------------------------------------
+  # 7) RENDIMIENTO WEB — Lighthouse (rendimiento, accesibilidad, SEO) sobre QA.
+  #    No es seguridad, por eso va en su propia etapa, en paralelo a la 6.
+  # ---------------------------------------------------------------------
+  - stage: Performance_QA
+    displayName: '7. Rendimiento (Lighthouse) - QA'
+    dependsOn: Deploy_QA
+    condition: succeeded()
+    jobs:
+      - job: Lighthouse
+        displayName: 'Lighthouse sobre el front de QA'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '22.x'
+            displayName: 'Usar Node.js 22'
+
+          # Auditoría de Google: rendimiento, accesibilidad, buenas prácticas y SEO.
+          - script: |
+              mkdir -p "$(Build.ArtifactStagingDirectory)/lighthouse"
+              export CHROME_PATH="$(which google-chrome)"
+              npx --yes lighthouse@12.6.0 "https://yourbus-front-qa-b4cue0d0a9c0ghc0.chilecentral-01.azurewebsites.net" \
+                --chrome-flags="--headless=new --no-sandbox" \
+                --only-categories=performance,accessibility,best-practices,seo \
+                --output=html --output=json \
+                --output-path="$(Build.ArtifactStagingDirectory)/lighthouse/reporte-lighthouse" \
+                --quiet
+            displayName: 'Lighthouse: auditar la página'
+            continueOnError: true
+
+          - script: |
+              node -e "
+              const r = require('$(Build.ArtifactStagingDirectory)/lighthouse/reporte-lighthouse.report.json');
+              for (const [k, v] of Object.entries(r.categories)) console.log(v.title + ': ' + Math.round(v.score * 100) + '/100');
+              "
+            displayName: 'Lighthouse: mostrar notas'
+            continueOnError: true
+
+          - publish: '$(Build.ArtifactStagingDirectory)/lighthouse'
+            artifact: 'reporte-lighthouse'
+            displayName: 'Publicar informe de Lighthouse'
+            condition: succeededOrFailed()
+
+  # ---------------------------------------------------------------------
+  # 8) DEPLOY PROD — solo si QA y los análisis de seguridad y rendimiento terminaron bien.
+  # ---------------------------------------------------------------------
+  - stage: Deploy_PROD
+    displayName: '8. Deploy - PROD'
+    dependsOn:
+      - Security_QA
+      - Performance_QA
     condition: succeeded()
     jobs:
       # Este job solo arranca si el "Approval check" configurado en el
